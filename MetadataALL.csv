@@ -1,0 +1,115 @@
+Sample_id,Direction.1,Direction,Meters,Ship,Year,Location,Site,Cr ,Cu,Fe,Pb
+ACS1,East,Bow,0,Accomac,2023,ACC-Bow000,Transect,104.69,266.97,282563.59,1372.41
+ACC24.EA11b,East,Bow,0,Accomac,2024,ACC-Bow000,Transect,131.3,284.75,322792.6,919.18
+ACS2,East,Bow,25,Accomac,2023,ACC-Bow025,Transect,37.46,41.62,39394.51,55.16
+ACC24.EA12,East,Bow,25,Accomac,2024,ACC-Bow025,Transect,42.17,42.77,41793.34,50.99
+ACS3,East,Bow,50,Accomac,2023,ACC-Bow050,Transect,36.6,39.78,38188.54,52.31
+ACC24.EA13,East,Bow,50,Accomac,2024,ACC-Bow050,Transect,36.21,37.78,39788.76,45.02
+ACS4,East,Bow,75,Accomac,2023,ACC-Bow075,Transect,39.83,41.83,39516.69,56.9
+ACC24.EA14,East,Bow,75,Accomac,2024,ACC-Bow075,Transect,36.9,41.3,40734.85,49.11
+ACS5,East,Bow,100,Accomac,2023,ACC-Bow100,Transect,39.77,41.7,40275.69,53.63
+ACC24.EA15,East,Bow,100,Accomac,2024,ACC-Bow100,Transect,39.63,41.01,40461.4,47.61
+ACS6,North,Port,0,Accomac,2023,ACC-Port000,Transect,47.57,54.8,53741.58,168.93
+ACC24.EA1b,North ,Port,0,Accomac,2024,ACC-Port000,Transect,151.04,392.73,453387.91,3193.81
+ACS7,North,Port,25,Accomac,2023,ACC-Port025,Transect,47.35,42.83,38856.74,55.27
+ACC24.EA2,North ,Port,25,Accomac,2024,ACC-Port025,Transect,46.75,45.14,34264.46,93.5
+ACS8,North,Port,50,Accomac,2023,ACC-Port050,Transect,43.76,42.7,42227.38,50.62
+ACC24.EA3,North ,Port,50,Accomac,2024,ACC-Port050,Transect,37.18,40.02,40764.61,43.94
+ACS9,North,Port,75,Accomac,2023,ACC-Port075,Transect,43.75,44.08,42681.2,51.79
+ACC24.EA4,North ,Port,75,Accomac,2024,ACC-Port075,Transect,42.68,42.55,43122.28,49.76
+ACS10,North,Port,100,Accomac,2023,ACC-Port100,Transect,41.5,42.27,40327.72,53.09
+ACC24.EA5,North ,Port,100,Accomac,2024,ACC-Port100,Transect,35.52,40.06,39760.37,47.63
+ACS16,South,Starboard,0,Accomac,2023,ACC-Starboard000,Transect,27.25,12.05,23959.26,18.91
+ACC24.EA6,South,Starboard,0,Accomac,2024,ACC-Starboard000,Transect,55.22,84.84,164859.69,321.94
+ACS17,South,Starboard,25,Accomac,2023,ACC-Starboard025,Transect,45.96,46.45,41523.57,60.69
+ACC24.EA7b,South,Starboard,25,Accomac,2024,ACC-Starboard025,Transect,42.25,44.44,47196.42,52.33
+ACS18,South,Starboard,50,Accomac,2023,ACC-Starboard050,Transect,42.58,44.81,39924.65,53.39
+ACC24.EA8,South,Starboard,50,Accomac,2024,ACC-Starboard050,Transect,32.37,32.48,32757.12,41.92
+ACS19,South,Starboard,75,Accomac,2023,ACC-Starboard075,Transect,42.48,43.14,38965.68,52.78
+ACC24.EA9,South,Starboard,75,Accomac,2024,ACC-Starboard075,Transect,39.22,41.67,42648,48.85
+ACS20,South,Starboard,100,Accomac,2023,ACC-Starboard100,Transect,41.94,43.94,39448.69,53.09
+ACC24.EA10,South,Starboard,100,Accomac,2024,ACC-Starboard100,Transect,38.85,43.43,40776.57,48.81
+AC.80,Sediment 1A,Stern,0,Accomac,2022,ACC-Stern000,Transect,57.36,106.85,131755.2,398.68
+AC.88,Sediment 1B,Stern,0,Accomac,2022,ACC-Stern000,Transect,57.36,106.85,131755.2,398.68
+AC.6,Sediment 1C,Stern,0,Accomac,2022,ACC-Stern000,Transect,57.36,106.85,131755.2,398.68
+ACS11,West,Stern,0,Accomac,2023,ACC-Stern000,Transect,42.03,56.92,68127.3,282.96
+ACC24.EA16,West,Stern,0,Accomac,2024,ACC-Stern000,Transect,239.77,169.49,207895.44,179.48
+AC.13,Sediment 2A,Stern,25,Accomac,2022,ACC-Stern025,Transect,45.34,74.46,47505.9,43.01
+AC.21,Sediment 2B,Stern,25,Accomac,2022,ACC-Stern025,Transect,45.34,74.46,47505.9,43.01
+AC.27,Sediment 2C,Stern,25,Accomac,2022,ACC-Stern025,Transect,45.34,74.46,47505.9,43.01
+ACS12,West,Stern,25,Accomac,2023,ACC-Stern025,Transect,41.47,42.74,38707.47,54.76
+ACC24.EA17,West,Stern,25,Accomac,2024,ACC-Stern025,Transect,39.3,40.27,42598.68,45.61
+AC.35,Sediment 3A,Stern,50,Accomac,2022,ACC-Stern050,Transect,42.15,38.55,40015.1,39.06
+AC.43,Sediment 3B,Stern,50,Accomac,2022,ACC-Stern050,Transect,42.15,38.55,40015.1,39.06
+AC.51,Sediment 3C,Stern,50,Accomac,2022,ACC-Stern050,Transect,42.15,38.55,40015.1,39.06
+ACS13,West,Stern,50,Accomac,2023,ACC-Stern050,Transect,43.96,41.39,36534.52,60.73
+ACC24.EA18,West,Stern,50,Accomac,2024,ACC-Stern050,Transect,41.92,40.83,38092.72,50.71
+AC.59,Sediment 4A,Stern,75,Accomac,2022,ACC-Stern075,Transect,37.95,38.56,41078.2,40.9
+AC.67,Sediment 4B,Stern,75,Accomac,2022,ACC-Stern075,Transect,37.95,38.56,41078.2,40.9
+AC.74,Sediment 4C,Stern,75,Accomac,2022,ACC-Stern075,Transect,37.95,38.56,41078.2,40.9
+AC.44,Sediment 4D,Stern,75,Accomac,2022,ACC-Stern075,Transect,37.95,38.56,41078.2,40.9
+ACS14,West,Stern,75,Accomac,2023,ACC-Stern075,Transect,47.53,43.4,38683.36,63.38
+ACC24.EA19,West,Stern,75,Accomac,2024,ACC-Stern075,Transect,37.02,36.59,38292.76,39.07
+AC.81,Sediment 5A,Stern,100,Accomac,2022,ACC-Stern100,Transect,37.09,36.41,38429.8,36.17
+AC.89,Sediment 5B,Stern,100,Accomac,2022,ACC-Stern100,Transect,37.09,36.41,38429.8,36.17
+ACS15,West,Stern,100,Accomac,2023,ACC-Stern100,Transect,39.63,40.62,39468.11,56.18
+ACC24.EA20,West,Stern,100,Accomac,2024,ACC-Stern100,Transect,41.35,36.55,38129.24,39.38
+SS016,Aft of Engine Room ,Aft of Engine Room,0,Aowa,2022,Aowa-Aft of Engine Room,Inter-Ship,38.74,619.79,109393.44,3470.12
+SS064,Aft of Engine Room ,Aft of Engine Room,0,Aowa,2023,Aowa-Aft of Engine Room,Inter-Ship,14.44,116.41,90872.38,777.12
+Aowa1.S311,Aft of Engine Room ,Aft of Engine Room,0,Aowa,2023,Aowa-Aft of Engine Room,Inter-Ship,14.44,116.41,90872.38,777.12
+SS0144,Aft of Engine Room ,Aft of Engine Room,0,Aowa,2024,Aowa-Aft of Engine Room,Inter-Ship,34.22,273.1,102483.81,1479.05
+Aowa9.S312,Aft of Engine Room ,Aft of Engine Room,0,Aowa,2024,Aowa-Aft of Engine Room,Inter-Ship,34.22,273.1,102483.81,1479.05
+SS008,Bow,Bow,0,Aowa,2022,Aowa-Bow000,Transect,35.59,52.88,38055.92,118.46
+SS056,Bow,Bow,0,Aowa,2023,Aowa-Bow000,Transect,37.81,53.77,40673.24,92.24
+SS0136,Bow,Bow,0,Aowa,2024,Aowa-Bow000,Transect,30.46,88.77,64526.35,959.99
+SS009,Bow,Bow,25,Aowa,2022,Aowa-Bow025,Transect,44.73,43.25,41436.64,58.41
+SS057,Bow,Bow,25,Aowa,2023,Aowa-Bow025,Transect,39.87,47.09,41068.36,69.78
+SS0137,Bow,Bow,25,Aowa,2024,Aowa-Bow025,Transect,39.41,47.67,42036.46,71.17
+SS010,Bow,Bow,50,Aowa,2022,Aowa-Bow050,Transect,39.67,41.73,40048.88,54.04
+SS058,Bow,Bow,50,Aowa,2023,Aowa-Bow050,Transect,38.74,43.74,40142.48,61.11
+SS0138,Bow,Bow,50,Aowa,2024,Aowa-Bow050,Transect,38.9,45.67,40508.3,62.17
+SS011,Bow,Bow,75,Aowa,2022,Aowa-Bow075,Transect,39.11,43.68,39589.38,64.57
+SS059,Bow,Bow,75,Aowa,2023,Aowa-Bow075,Transect,36.42,40.23,37867.38,55.08
+SS0139,Bow,Bow,75,Aowa,2024,Aowa-Bow075,Transect,35.48,46.88,39872.95,64.55
+SS012,Bow,Bow,100,Aowa,2022,Aowa-Bow100,Transect,35.02,44.31,39156.86,67.91
+SS060,Bow,Bow,100,Aowa,2023,Aowa-Bow100,Transect,35.23,41.5,37265.86,58.23
+SS0140,Bow,Bow,100,Aowa,2024,Aowa-Bow100,Transect,34.69,45.29,39149.76,71.33
+SS013,Bow,Bow,150,Aowa,2022,Aowa-Bow150,Transect,37.74,45.6,38890.34,66.77
+SS061,Bow,Bow,150,Aowa,2023,Aowa-Bow150,Transect,36.01,46.09,37804.81,68.26
+SS0141,Bow,Bow,150,Aowa,2024,Aowa-Bow150,Transect,37.69,46.37,39940.91,67.94
+SS014,Bow,Bow,200,Aowa,2022,Aowa-Bow200,Transect,33.37,39.01,33553.24,51.45
+SS062,Bow,Bow,200,Aowa,2023,Aowa-Bow200,Transect,36.22,46.67,36111.79,64.49
+SS0142,Bow,Bow,200,Aowa,2024,Aowa-Bow200,Transect,38.5,43.94,40425.68,58.84
+Aowa11.S320,Engine Room,Engine Room,0,Aowa,2023,Aowa-Engine Room,Inter-Ship,25.61,83.86,227054.04,1695.23
+SS015,Fore of Engine Room,Fore of Engine Room,0,Aowa,2022,Aowa-Fore of Engine Room,Inter-Ship,18.74,302.86,71126.73,590.09
+SS063,Fore of Engine Room ,Fore of Engine Room,0,Aowa,2023,Aowa-Fore of Engine Room,Inter-Ship,37.58,3203.56,376224.51,1639.11
+Aowa2.S315,Fore of Engine Room,Fore of Engine Room,0,Aowa,2023,Aowa-Fore of Engine Room,Inter-Ship,37.58,3203.56,376224.51,1639.11
+SS0143,Fore of Engine Room,Fore of Engine Room,0,Aowa,2024,Aowa-Fore of Engine Room,Inter-Ship,70.23,150.96,222340.53,1523.53
+Aowa10.S316,Fore of Engine Room,Fore of Engine Room,0,Aowa,2024,Aowa-Fore of Engine Room,Inter-Ship,70.23,150.96,222340.53,1523.53
+Aowa3.S319,Port Bow,Port Bow,0,Aowa,2023,Aowa-Port Bow,Inter-Ship,36.38,44.96,42138.97,108.99
+Aowa4.S323,Port Midship,Port Midship,0,Aowa,2023,Aowa-Port Midship,Inter-Ship,38.09,48.5,41804.85,78.1
+Aowa5.S327,Port Stern,Port Stern,0,Aowa,2023,Aowa-Port Stern,Inter-Ship,41.66,68.52,50010.55,231.47
+Aowa6.S331,Starboard Bow,Starboard Bow,0,Aowa,2023,Aowa-Starboard Bow,Inter-Ship,38.13,52.87,43071.87,140.68
+Aowa7.S335,Starboard Midship,Starboard Midship,0,Aowa,2023,Aowa-Starboard Midship,Inter-Ship,20.06,7077.68,90986.74,2114.53
+Aowa8.S339,Starboard Stern,Starboard Stern,0,Aowa,2023,Aowa-Starboard Stern,Inter-Ship,26.38,38.65,42997.97,217.42
+SS001,Stern,Stern,0,Aowa,2022,Aowa-Stern000,Transect,37.85,40.89,39470.45,66.57
+SS049,Stern,Stern,0,Aowa,2023,Aowa-Stern000,Transect,39.71,49.75,42779.96,78.92
+SS0129,Stern,Stern,0,Aowa,2024,Aowa-Stern000,Transect,44.8,45.76,45948.66,74.48
+SS002,Stern,Stern,25,Aowa,2022,Aowa-Stern025,Transect,38.86,40.98,41946.74,51.86
+SS050,Stern ,Stern,25,Aowa,2023,Aowa-Stern025,Transect,45.81,45.13,40249.97,63.88
+SS0130,Stern,Stern,25,Aowa,2024,Aowa-Stern025,Transect,45.36,46.78,40012.67,60.33
+SS003,Stern,Stern,50,Aowa,2022,Aowa-Stern050,Transect,54.77,46.89,39938.61,66.37
+SS051,Stern,Stern,50,Aowa,2023,Aowa-Stern050,Transect,54.27,46.41,38825.07,69
+SS0131,Stern,Stern,50,Aowa,2024,Aowa-Stern050,Transect,64.36,53.03,41916.38,70.48
+SS004,Stern,Stern,75,Aowa,2022,Aowa-Stern075,Transect,42.16,41.15,37757.88,89.09
+SS052,Stern,Stern,75,Aowa,2023,Aowa-Stern075,Transect,34,71.04,38819.7,363.89
+SS0132,Stern,Stern,75,Aowa,2024,Aowa-Stern075,Transect,28.71,28.32,38266.56,27.68
+SS005,Stern,Stern,100,Aowa,2022,Aowa-Stern100,Transect,37.63,36.84,38545.38,53.7
+SS053,Stern,Stern,100,Aowa,2023,Aowa-Stern100,Transect,31.56,25.73,36154.52,27.24
+SS0133,Stern,Stern,100,Aowa,2024,Aowa-Stern100,Transect,34.96,33.57,40690.14,25.03
+SS006,Stern,Stern,150,Aowa,2022,Aowa-Stern150,Transect,37.82,37.55,38986.01,33.02
+SS054,Stern,Stern,150,Aowa,2023,Aowa-Stern150,Transect,39.39,38.77,38536.54,37.03
+SS0134,Stern,Stern,150,Aowa,2024,Aowa-Stern150,Transect,38.98,38.79,39387.65,36.92
+SS007,Stern,Stern,200,Aowa,2022,Aowa-Stern200,Transect,36.91,37.35,37102.42,30.56
+SS055,Stern,Stern,200,Aowa,2023,Aowa-Stern200,Transect,38.12,37.61,38232.61,36.97
+SS0135,Stern,Stern,200,Aowa,2024,Aowa-Stern200,Transect,38.41,40.78,40107.82,37.54
