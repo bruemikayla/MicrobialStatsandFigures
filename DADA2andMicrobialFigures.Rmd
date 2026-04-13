@@ -1,0 +1,1418 @@
+---
+title: "LargeDADA2andMicrobialStats"
+author: "Mikayla Brueshaber"
+date: "2026-04-07"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+## Load Data, Packages, and assign forward and reverse
+```{r load data and packages}
+library(dada2)
+pathF <- "C:/Users/watts/Documents/Raw Data/AR+MS+MB/Forward/"
+pathR <- "C:/Users/watts/Documents/Raw Data/AR+MS+MB/Reverse/"
+list.files(pathF)
+list.files (pathR)
+pathFAC22 <- "C:/Users/watts/Documents/Raw Data/AR+MS+MB/Forward/MS22/"
+pathRAC22 <- "C:/Users/watts/Documents/Raw Data/AR+MS+MB/Reverse/MS22/"
+list.files(pathFAC22)
+list.files(pathRAC22)
+```
+
+``` {r Forward and Reverse}
+fastqFs <- sort(list.files(pathF, pattern="_R1_001.fastq", full.names = TRUE))
+fastqRs <- sort(list.files(pathR, pattern="_R2_001.fastq", full.names = TRUE))
+if(length(fastqFs) !=length(fastqRs)) stop("Forward and reverse files do not match.")
+AC22fastqFs <- sort(list.files(pathFAC22, pattern = "_R1_001.fastq", full.names = TRUE))
+AC22fastqRs <- sort(list.files(pathRAC22, pattern="_R2_001.fastq", full.names = TRUE))
+```
+
+## Trim Data
+``` {r Trim}
+FWD <- "GTGYCAGCMGCCGCGGTAA"
+REV <- "CCGYCAATTYMTTTRAGTTT"
+trimLeft = c(FWD, REV)
+dir.create(filtpathF, showWarnings = FALSE)
+dir.create(filtpathR, showWarnings = FALSE)
+out <- filterAndTrim(fwd = fastqFs, filt = file.path(filtpathF, basename(fastqFs)), rev = fastqRs, filt.rev = file.path(filtpathR, basename(fastqRs)), truncLen = c(280,180), maxN = 0, maxEE = c(2,2), truncQ = 2, rm.phix = TRUE, compress = TRUE, multithread = TRUE, trimLeft = c(19,20))
+head(out)
+#Filter ACC 22
+FWD <- "GTGYCAGCMGCCGCGGTAA"
+REV <- "CCGYCAATTYMTTTRAGTTT"
+trimLeft = c(FWD, REV)
+out <- filterAndTrim(fwd = AC22fastqFs, filt = file.path(filtpathF, basename(AC22fastqFs)), rev = AC22fastqRs, filt.rev = file.path(filtpathR, basename(AC22fastqRs)), truncLen = c(280,180), maxN = 0, maxEE = c(2,2), truncQ = 2, rm.phix = TRUE, compress = TRUE, multithread = TRUE, trimLeft = c(19,20))
+head(out)
+```
+
+```{r Load in Filtered Files}
+filtpathF <- "C:/Users/watts/Documents/Raw Data/AR+MS+MB/Forward/filtered/"
+filtpathR <- "C:/Users/watts/Documents/Raw Data/AR+MS+MB/Reverse/filtered/"
+save.image("C:/Users/watts/Documents/Raw Data/post_filter.RData")
+load("C:/Users/watts/Documents/Raw Data/post_filter.RData")
+```
+```{r Parallization}
+#ACCOMAC 2024, ACCOMAC 2023, ACCOMAC 2022, AOWA 2024, AOWA 2023, AOWA 2022
+#Accomac 2024
+filtpathFAC24 <- "C:/Users/watts/Documents/Raw Data/AR+MS+MB/Forward/filtered/Accomac 2024/"
+filtpathRAC24 <- "C:/Users/watts/Documents/Raw Data/AR+MS+MB/Reverse/filtered/Accomac 2024/"
+filtFAC24s <- list.files(filtpathFAC24, pattern = "fastq.gz", full.names=TRUE)
+filtRAC24s <- list.files(filtpathRAC24, pattern = "fastq.gz", full.names = TRUE)
+#Check Sample Names
+sample.namesAC24 <- sapply(strsplit(basename(filtFAC24s), "_"), function (x) paste (x[1], x[2]))
+sample.namesAC24R <- sapply(strsplit(basename(filtRAC24s), "_"), function (x) paste (x[1], x[2]))
+if(!identical(sample.namesAC24, sample.namesAC24R)) stop("Forward and reverse files do not match,")
+names(filtFAC24s) <- sample.namesAC24
+names(filtRAC24s) <- sample.namesAC24R
+```
+
+## Batch Work
+```{r ACCOMAC 2024}
+set.seed(100)
+errFAC24 <- learnErrors(filtFAC24s, nbases = 5e7, multithread = TRUE, verbose = TRUE)
+save.image("C:/Users/watts/Documents/Raw Data/ErrFAC24.RData")
+load("C:/Users/watts/Documents/Raw Data/ErrFAC24.RData")
+errRAC24 <- learnErrors(filtRAC24s, nbases = 5e7, multithread = TRUE, verbose = TRUE)
+#Merge pairs
+mergersAC24 <- vector("list", length(sample.namesAC24))
+names(mergersAC24) <- sample.namesAC24
+for(sam in sample.namesAC24){
+ cat("Processing:", sam, "\n")
+ derepFAC24 <- derepFastq(filtFAC24s[[sam]])
+ ddFAC24 <- dada(derepFAC24, err= errFAC24, multithread = TRUE)
+ derepRAC24 <- derepFastq(filtRAC24s[[sam]])
+ ddRAC24 <- dada(derepRAC24, err = errRAC24, multithread = TRUE)
+ mergerAC24 <- mergePairs(ddFAC24, derepFAC24, ddRAC24, derepRAC24)
+ mergersAC24[[sam]] <- mergerAC24
+ }
+rm(derepFAC24); rm(derepRAC24)
+seqtabAC24 <- makeSequenceTable(mergersAC24)
+saveRDS(seqtabAC24, "C:/Users/watts/Documents/Raw Data/AR+MS+MB/seqtabAC24.rds")
+```
+
+```{r Accomac 2023}
+filtpathFAC23 <- "C:/Users/watts/Documents/Raw Data/AR+MS+MB/Forward/filtered/Accomac 2023/"
+filtpathRAC23 <- "C:/Users/watts/Documents/Raw Data/AR+MS+MB/Reverse/filtered/Accomac 2023/"
+filtFAC23s <- list.files(filtpathFAC23, pattern = "fastq.gz", full.names=TRUE)
+filtRAC23s <- list.files(filtpathRAC23, pattern = "fastq.gz", full.names = TRUE)
+#Check Sample Names
+sample.namesAC23 <- sapply(strsplit(basename(filtFAC23s), "_"), '[', 1)
+sample.namesAC23R <- sapply(strsplit(basename(filtRAC23s), "_"), '[', 1)
+if(!identical(sample.namesAC23, sample.namesAC23R)) stop("Forward and reverse files do not match,")
+names(filtFAC23s) <- sample.namesAC23
+names(filtRAC23s) <- sample.namesAC23R
+#LEARN ERRORS
+set.seed(100)
+errFAC23 <- learnErrors(filtFAC23s, nbases = 5e7, multithread = TRUE, verbose = TRUE)
+errRAC23 <- learnErrors(filtRAC23s, nbases = 5e7, multithread = TRUE, verbose = TRUE)
+#Merge pairs
+mergersAC23 <- vector("list", length(sample.namesAC23))
+names(mergersAC23) <- sample.namesAC23
+for(sam in sample.namesAC23) {
+  cat("Processing:", sam, "\n")
+derepFAC23 <- derepFastq(filtFAC23s[[sam]])
+ddFAC23 <- dada(derepFAC23, err= errFAC23, multithread = TRUE)
+derepRAC23 <- derepFastq(filtRAC23s[[sam]])
+ddRAC23 <- dada(derepRAC23, err = errRAC23, multithread = TRUE)
+mergerAC23 <- mergePairs(ddFAC23, derepFAC23, ddRAC23, derepRAC23)
+mergersAC23[[sam]] <- mergerAC23
+}
+rm(derepFAC23); rm(derepRAC23)
+seqtabAC23 <- makeSequenceTable(mergersAC23)
+saveRDS(seqtabAC23, "C:/Users/watts/Documents/Raw Data/AR+MS+MB/seqtabAC23.rds")
+save.image("C:/Users/watts/Documents/Raw Data/ACC2423")
+```
+
+```{ ACCOMAC 2022}
+filtpathFAC22 <- "C:/Users/watts/Documents/Raw Data/AR+MS+MB/Forward/filtered/Accomac 2022/"
+filtpathRAC22 <- "C:/Users/watts/Documents/Raw Data/AR+MS+MB/Reverse/filtered/Accomac 2022/"
+filtFAC22s <- list.files(filtpathFAC22, pattern = "fastq.gz", full.names=TRUE)
+filtRAC22s <- list.files(filtpathRAC22, pattern = "fastq.gz", full.names = TRUE)
+#Check Sample Names
+sample.namesAC22 <- sapply(strsplit(basename(filtFAC22s), "_"), '[', 1)
+sample.namesAC22R <- sapply(strsplit(basename(filtRAC22s), "_"), '[', 1)
+if(!identical(sample.namesAC22, sample.namesAC22R)) stop("Forward and reverse files do not match,")
+names(filtFAC22s) <- sample.namesAC22
+names(filtRAC22s) <- sample.namesAC22R
+#LEARN ERRORS
+set.seed(100)
+errFAC22 <- learnErrors(filtFAC22s, nbases = 5e7, multithread = TRUE, verbose = TRUE)
+errRAC22 <- learnErrors(filtRAC22s, nbases = 5e7, multithread = TRUE, verbose = TRUE)
+#Merge pairs
+mergersAC22 <- vector("list", length(sample.namesAC22))
+names(mergersAC22) <- sample.namesAC22
+for(sam in sample.namesAC22) {
+  cat("Processing:", sam, "\n")
+derepFAC22 <- derepFastq(filtFAC22s[[sam]])
+ddFAC22 <- dada(derepFAC22, err= errFAC22, multithread = TRUE)
+derepRAC22 <- derepFastq(filtRAC22s[[sam]])
+ddRAC22 <- dada(derepRAC22, err = errRAC22, multithread = TRUE)
+mergerAC22 <- mergePairs(ddFAC22, derepFAC22, ddRAC22, derepRAC22)
+mergersAC22[[sam]] <- mergerAC22
+}
+rm(derepFAC22); rm(derepRAC22)
+seqtabAC22 <- makeSequenceTable(mergersAC22)
+saveRDS(seqtabAC22, "C:/Users/watts/Documents/Raw Data/AR+MS+MB/seqtabAC22.rds")
+```
+
+```{ r AOWA 2024}
+filtpathFAO24 <- "C:/Users/watts/Documents/Raw Data/AR+MS+MB/Forward/filtered/Aowa 2024/"
+filtpathRAO24 <- "C:/Users/watts/Documents/Raw Data/AR+MS+MB/Reverse/filtered/Aowa 2024/"
+filtFAO24s <- list.files(filtpathFAO24, pattern = "fastq.gz", full.names=TRUE)
+filtRAO24s <- list.files(filtpathRAO24, pattern = "fastq.gz", full.names = TRUE)
+#Check Sample Names
+sample.namesAO24 <- sapply(strsplit(basename(filtFAO24s), "_"), '[', 1)
+sample.namesAO24R <- sapply(strsplit(basename(filtRAO24s), "_"), '[', 1)
+if(!identical(sample.namesAO24, sample.namesAO24R)) stop("Forward and reverse files do not match,")
+names(filtFAO24s) <- sample.namesAO24
+names(filtRAO24s) <- sample.namesAO24R
+#LEARN ERRORS
+set.seed(100)
+errFAO24 <- learnErrors(filtFAO24s, nbases = 5e7, multithread = TRUE, verbose = TRUE)
+errRAO24 <- learnErrors(filtRAO24s, nbases = 5e7, multithread = TRUE, verbose = TRUE)
+#Merge pairs
+mergersAO24 <- vector("list", length(sample.namesAO24))
+names(mergersAO24) <- sample.namesAO24
+for(sam in sample.namesAO24) {
+  cat("Processing:", sam, "\n")
+derepFAO24 <- derepFastq(filtFAO24s[[sam]])
+ddFAO24 <- dada(derepFAO24, err= errFAO24, multithread = TRUE)
+derepRAO24 <- derepFastq(filtRAO24s[[sam]])
+ddRAO24 <- dada(derepRAO24, err = errRAO24, multithread = TRUE)
+mergerAO24 <- mergePairs(ddFAO24, derepFAO24, ddRAO24, derepRAO24)
+mergersAO24[[sam]] <- mergerAO24
+}
+rm(derepFAO24); rm(derepRAO24)
+seqtabAO24 <- makeSequenceTable(mergersAO24)
+saveRDS(seqtabAO24, "C:/Users/watts/Documents/Raw Data/AR+MS+MB/seqtabAO24.rds")
+save.image("C:/Users/watts/Documents/Raw Data/AR+MS+MB/ACCAO24")
+```
+
+```{r AOWA 2023}
+filtpathFAO23 <- "C:/Users/watts/Documents/Raw Data/AR+MS+MB/Forward/filtered/Aowa 2023/"
+filtpathRAO23 <- "C:/Users/watts/Documents/Raw Data/AR+MS+MB/Reverse/filtered/Aowa 2023/"
+filtFAO23s <- list.files(filtpathFAO23, pattern = "fastq.gz", full.names=TRUE)
+filtRAO23s <- list.files(filtpathRAO23, pattern = "fastq.gz", full.names = TRUE)
+#Check Sample Names
+sample.namesAO23 <- sapply(strsplit(basename(filtFAO23s), "_"), '[', 1)
+sample.namesAO23R <- sapply(strsplit(basename(filtRAO23s), "_"), '[', 1)
+if(!identical(sample.namesAO23, sample.namesAO23R)) stop("Forward and reverse files do not match,")
+names(filtFAO23s) <- sample.namesAO23
+names(filtRAO23s) <- sample.namesAO23R
+#LEARN ERRORS
+set.seed(100)
+errFAO23 <- learnErrors(filtFAO23s, nbases = 5e7, multithread = TRUE, verbose = TRUE)
+errRAO23 <- learnErrors(filtRAO23s, nbases = 5e7, multithread = TRUE, verbose= TRUE)
+#Merge pairs
+mergersAO23 <- vector("list", length(sample.namesAO23))
+names(mergersAO23) <- sample.namesAO23
+for(sam in sample.namesAO23) {
+  cat("Processing:", sam, "\n")
+derepFAO23 <- derepFastq(filtFAO23s[[sam]])
+ddFAO23 <- dada(derepFAO23, err= errFAO23, multithread = TRUE)
+derepRAO23 <- derepFastq(filtRAO23s[[sam]])
+ddRAO23 <- dada(derepRAO23, err = errRAO23, multithread = TRUE)
+mergerAO23 <- mergePairs(ddFAO23, derepFAO23, ddRAO23, derepRAO23)
+mergersAO23[[sam]] <- mergerAO23
+}
+rm(derepFAO23); rm(derepRAO23)
+seqtabAO23 <- makeSequenceTable(mergersAO23)
+saveRDS(seqtabAO23, "C:/Users/watts/Documents/Raw Data/AR+MS+MB/seqtabAO23.rds")
+save.image("C:/Users/watts/Documents/Raw Data/AR+MS+MB/ACCAO2423")
+```
+```{r AOWA 2022}
+filtpathFAO22 <- "C:/Users/watts/Documents/Raw Data/AR+MS+MB/Forward/filtered/Aowa 2022/"
+filtpathRAO22 <- "C:/Users/watts/Documents/Raw Data/AR+MS+MB/Reverse/filtered/Aowa 2022/"
+filtFAO22s <- list.files(filtpathFAO22, pattern = "fastq.gz", full.names=TRUE)
+filtRAO22s <- list.files(filtpathRAO22, pattern = "fastq.gz", full.names = TRUE)
+#Check Sample Names
+sample.namesAO22 <- sapply(strsplit(basename(filtFAO22s), "_"), '[', 1)
+sample.namesAO22R <- sapply(strsplit(basename(filtRAO22s), "_"), '[', 1)
+if(!identical(sample.namesAO22, sample.namesAO22R)) stop("Forward and reverse files do not match,")
+names(filtFAO22s) <- sample.namesAO22
+names(filtRAO22s) <- sample.namesAO22R
+#LEARN ERRORS
+set.seed(100)
+errFAO22 <- learnErrors(filtFAO22s, nbases = 5e7, multithread = TRUE, verbose = TRUE)
+errRAO22 <- learnErrors(filtRAO22s, nbases = 5e7, multithread = TRUE, verbose = TRUE)
+#Merge pairs
+mergersAO22 <- vector("list", length(sample.namesAO22))
+names(mergersAO22) <- sample.namesAO22
+for(sam in sample.namesAO22) {
+  cat("Processing:", sam, "\n")
+derepFAO22 <- derepFastq(filtFAO22s[[sam]])
+ddFAO22 <- dada(derepFAO22, err= errFAO22, multithread = TRUE)
+derepRAO22 <- derepFastq(filtRAO22s[[sam]])
+ddRAO22 <- dada(derepRAO22, err = errRAO22, multithread = TRUE)
+mergerAO22 <- mergePairs(ddFAO22, derepFAO22, ddRAO22, derepRAO22)
+mergersAO22[[sam]] <- mergerAO22
+}
+rm(derepFAO22); rm(derepRAO22)
+seqtabAO22 <- makeSequenceTable(mergersAO22)
+saveRDS(seqtabAO22, "C:/Users/watts/Documents/Raw Data/AR+MS+MB/seqtabAO22.rds")
+save.image <- "C:/Users/watts/Documents/Raw Data/AR+MS+MB/ALLSEQ"
+load("C:/Users/watts/Documents/Raw Data/AR+MS+MB/ALLSEQ")
+```
+
+```{r AOWA Inter-Ship}
+pathFAOIS <- "C:/Users/watts/Documents/Raw Data/AR+MS+MB/Forward/AOIS"
+pathRAOIS <- "C:/Users/watts/Documents/Raw Data/AR+MS+MB/Reverse/AOIS/"
+list.files(pathFAOIS)
+list.files(pathRAOIS)
+
+AOISfastqFs <- sort(list.files(pathFAOIS, pattern = "_R1_001.fastq", full.names = TRUE))
+AOISfastqRs <- sort(list.files(pathRAOIS, pattern="_R2_001.fastq", full.names = TRUE))
+#trim
+FWD <- "GTGYCAGCMGCCGCGGTAA"
+REV <- "CCGYCAATTYMTTTRAGTTT"
+trimLeft = c(FWD, REV)
+dir.create(filtpathF, showWarnings = FALSE)
+dir.create(filtpathR, showWarnings = FALSE)
+outAI <- filterAndTrim(fwd = AOISfastqFs, filt = file.path(filtpathF, basename(AOISfastqFs)), rev = AOISfastqRs, filt.rev = file.path(filtpathR, basename(AOISfastqRs)), truncLen = c(280,180), maxN = 0, maxEE = c(2,2), truncQ = 2, rm.phix = TRUE, compress = TRUE, multithread = TRUE, trimLeft = c(19,20))
+head(outAI)
+# LOAD IN FILTERED FILES
+filtpathF <- "C:/Users/watts/Documents/Raw Data/AR+MS+MB/Forward/filtered/"
+filtpathR <- "C:/Users/watts/Documents/Raw Data/AR+MS+MB/Reverse/filtered/"
+filtpathFAOIS <- "C:/Users/watts/Documents/Raw Data/AR+MS+MB/Forward/filtered/Aowa Inter-Ship//"
+filtpathRAOIS <- "C:/Users/watts/Documents/Raw Data/AR+MS+MB/Reverse/filtered/Aowa Inter-Ship//"
+filtFAOISs <- list.files(filtpathFAOIS, pattern = "fastq.gz", full.names=TRUE)
+filtRAOISs <- list.files(filtpathRAOIS, pattern = "fastq.gz", full.names = TRUE)
+#Check Sample Names
+sample.namesAOIS <- sapply(strsplit(basename(filtFAOISs), "_"), function (x) paste (x[1], x[2]))
+sample.namesAOISR <- sapply(strsplit(basename(filtRAOISs), "_"), function (x) paste (x[1], x[2]))
+if(!identical(sample.namesAOIS, sample.namesAOISR)) stop("Forward and reverse files do not match,")
+names(filtFAOISs) <- sample.namesAOIS
+names(filtRAOISs) <- sample.namesAOISR
+#LEARN ERRORS
+set.seed(100)
+errFAOIS <- learnErrors(filtFAOISs, nbases = 5e7, multithread = TRUE, verbose = TRUE)
+#save.image("C:/Users/watts/Documents/Raw Data/ErrFAOIS.RData")
+#load("C:/Users/watts/Documents/Raw Data/ErrFAOIS.RData")
+errRAOIS <- learnErrors(filtRAOISs, nbases = 5e7, multithread = TRUE, verbose = TRUE)
+#Merge pairs
+mergersAOIS <- vector("list", length(sample.namesAOIS))
+names(mergersAOIS) <- sample.namesAOIS
+for(sam in sample.namesAOIS){
+  cat("Processing:", sam, "\n")
+  derepFAOIS <- derepFastq(filtFAOISs[[sam]])
+  ddFAOIS <- dada(derepFAOIS, err= errFAOIS, multithread = TRUE)
+  derepRAOIS <- derepFastq(filtRAOISs[[sam]])
+  ddRAOIS <- dada(derepRAOIS, err = errRAOIS, multithread = TRUE)
+  mergerAOIS <- mergePairs(ddFAOIS, derepFAOIS, ddRAOIS, derepRAOIS)
+  mergersAOIS[[sam]] <- mergerAOIS
+}
+rm(derepFAOIS); rm(derepRAOIS)
+seqtabAOIS <- makeSequenceTable(mergersAOIS)
+saveRDS(seqtabAOIS, "C:/Users/watts/Documents/Raw Data/AR+MS+MB/seqtabAOIS.rds")
+```
+
+## COMBINE BATCHES and TAXONOMY
+```{r Merge Sequence Tables}
+st.all <- mergeSequenceTables(seqtabAC24, seqtabAC23, seqtabAC22, seqtabAO24, seqtabAO23, seqtabAO22, seqtabAOIS)
+seqtab <- removeBimeraDenovo(st.all, method = "consensus", multithread = TRUE, verbose = TRUE)
+```
+```{r Assign and Export Taxonomy}
+tax <- assignTaxonomy(seqtab, "C:/Users/wattsm24/OneDrive - East Carolina University/silva_nr_v132_train_set.fa.gz", multithread = TRUE)
+#Export Taxonomy
+taxa.print <- tax
+rownames(taxa.print) <- NULL
+head(taxa.print)
+
+write.csv(tax, file = "ASVs_taxonomy")
+write.csv(tax, file = "ASVa_taxonomy.csv")
+saveRDS(tax, "ASVa_taxonomy.rds")
+
+asv_headers <- vector(dim(seqtab)[2], mode = "character")
+count.asv.tab <- t(seqtab)
+row.names(count.asv.tab) <- sub(">", "", asv_headers)
+write.csv(count.asv.tab, file = "ASVs_counts.csv")
+saveRDS(count.asv.tab, file = "ASVs_counts.rds")
+
+View(count.asv.tab)
+View(taxa.print)
+View(tax)
+View(count.asv.tab)
+
+write.csv(tax, file = "ASVs_taxonomy.csv")
+saveRDS(tax, "ASVs_taxonomy.rds")
+write.csv(tax, file = "asvs_taxonomy.csv")
+saveRDS(tax, "asvs_taxonomy.rds")
+
+asv_headers <- vector(dim(seqtab)[2], mode = "character")
+count.asv.tab <- t(seqtab)
+row.names(count.asv.tab) <- sub(">", "", asv_headers)
+write.csv(count.asv.tab, file = "asvs_count.csv")
+saveRDS(count.asv.tab, file = "asvs_counts.rds")
+
+asv_seqs <- colnames(seqtab)
+asv_headers <- vector(dim(seqtab)[2], mode="character")
+for (i in 1:dim(seqtab)[2]) {asv_headers[i] <- paste(">ASV", i, sep="_")}
+
+asv_fasta <- c(rbind(asv_headers, asv_seqs))
+asv_otu <- t(seqtab)
+row.names(asv_otu) <- sub(">", "", asv_headers)
+asv_tax <- tax
+row.names(asv_tax) <- sub(">", "", asv_headers)
+OTU_TAX_table <- merge(asv_otu, asv_tax, by=0)
+write(asv_fasta, "asv_fasta.fa")
+write.table(asv_otu, "asv_otu.csv", sep=",", quote=F, col.names=NA)
+write.table(asv_tax, "asv_tax.csv", sep=",", quote=F, col.names=NA)
+write.table(OTU_TAX_table, "OTU_TAX_table.csv", sep=",", quote=F, col.names=NA)
+```
+## Plotting
+```{r Load in Packages and Data}
+library(ggplot2)
+library(dplyr)
+library(tidyr)
+library(scales)
+library(phyloseq)
+asv_otu_all <-read.csv("C:/Users/wattsm24/OneDrive - East Carolina University/Documents/Thesis/RDS files for tax/R FIles/asv_otu.csv")
+asv_otu_all <- read.csv("./")
+tax_data <- read.csv("C:/Users/wattsm24/OneDrive - East Carolina University/Documents/Thesis/RDS files for tax/R FIles//asv_tax.csv")
+metadata <- read.csv("C:/Users/wattsm24/OneDrive - East Carolina University/Documents/Thesis/RDS files for tax/R FIles/MetadataALL.csv")
+```
+```{r Join Data}
+#join data
+asv_otu_all <- asv_otu_all %>%
+  rename(ASV = X)
+tax_data <- tax_data %>%
+  rename(ASV = X)
+rownames(tax_data) <- paste0("ASV_", rownames(tax_data))
+tax_mat <- as.matrix(tax_data)
+asv_long <- asv_otu_all %>% 
+  pivot_longer(cols = -ASV, names_to = "sample", values_to = "abundance") #reshapes data
+asv_long <- left_join(asv_long, tax_data, by = "ASV" ) #joins the long version OTU file with the taxonomic data by ASV
+colnames(asv_long) #checks the column names to ensure the data was joined correctly
+n_genera <- length(unique(asv_long$Genus)) #counts the number of genera from the data
+asv_long <- asv_long %>%
+  rename(Sample_id=sample) #renames the sample column to sample id
+asv_meta <- left_join(asv_long, metadata, by = "Sample_id") #joins the metadata with the previously joined taxonomic and OTU data
+asv_meta2 <- filter(asv_meta, !Kingdom == "Eukaryota")
+```
+```{r Setup Phyloseq}
+asv_otu_all_fixed <-t(asv_otu_all) #switches rows and columns to be read by phyloseq 
+colnames(asv_otu_all_fixed) <- asv_otu_all_fixed [1,] #makes the first row of the data the column names
+asv_otu_all_fixed <- asv_otu_all_fixed[-1,] #removes the first row bc they're now the column names
+asv_otu_all_fixed <- apply(asv_otu_all_fixed, 2, as.numeric) #converts values to numeric instead of character
+otu <- otu_table(as.matrix(asv_otu_all_fixed), taxa_are_rows = FALSE) #converts into phyloseq otu table where taxa are columns and samples are rows
+ps <- phyloseq(otu) #starts phyloseq
+ps <- merge_phyloseq(ps, sample_data(metadata)) #merges ps with the metadata
+ps <- merge_phyloseq(ps, tax_table(tax_mat))
+
+meta <- data.frame(sample_data(ps)) #extracts metadata into a separate data frame
+
+meta$Subject <- rownames(meta) #creates a Subject column with the sample ids
+sample_data(ps) <- sample_data(meta) #includes the new subject column in the phyloseq table
+```
+```{r Alpha Diversity}
+shannon_df<- estimate_richness(ps, measures = "Shannon")
+shannon_df$Subject <- rownames(shannon_df)
+metashannon <- data.frame(sample_data(ps))
+df <-metashannon %>%
+  left_join(shannon_df, by = "Subject")
+ggplot(df, aes(x= Ship, y = Shannon)) +
+  geom_boxplot() +
+  theme_minimal()+
+  geom_boxplot(aes(fill = Ship))+
+  theme(panel.background = element_blank(), panel.border = element_rect(colour = "black", fill = NA, size = 1.5))
+Simpson_df$Subject <- rownames(Simpson_df)
+metasimpson <- data.frame(sample_data(ps))
+dfSi <- metasimpson %>%
+  left_join(Simpson_df, by ="Subject")
+Sibp <- ggplot(dfSi, aes(x=Ship, y = Simpson)) +
+  geom_boxplot() +
+  theme_minimal()+
+  geom_boxplot(aes(fill = Ship))+
+  theme(panel.background = element_blank(), panel.border = element_rect(colour = "black", fill = NA, size = 1.5))
+
+plot_richness(ps, x="Ship", measures=c("Shannon", "Simpson"), color="Ship") #plots Shannon diversity index and Simpson diversity index using the phyloseq table created above using sample id as the color
+plot_richness(ps, x="Sample_id", measures=c("Shannon", "Simpson"), color="Ship") #plots Shannon diversity index and Simpson diversity index using the phyloseq table created above using sample type as the color
+plot_richness(ps_ACCallyears, x= "Sample_id", measures = c("Shannon", "Simpson"), color = "Sample_id")
+psAowa <-plot_richness(ps_AOWAallyears, x= "Sample_id", measures = c("Shannon", "Simpson"), color = "Sample_id")
+ggsave("richness_plotACC.png", plot = p, width = 10, height = 8, dpi = 300) #saves plot in environment and R files as Richness_plotACC.png
+ggsave("richness_plotACCST.png", plot = pst, width = 10, height = 8, dpi = 300) #saves plot in environment and R files as richness_plotACCST.png where ST refers to sample type
+# code for subsetting samples
+ps_subset <- prune_samples(sample_names(ps) %in% paste0("SS", sprintf("%03d", 1:16)), ps)
+p <- plot_richness(ps_subset, x = "Sample_id", measures = c("Shannon", "Simpson"), color = "Sample_id")
+p <- p + labs(x = "Aowa Spring 2022 Samples", title = "Shannon and Simpson Diversity-Aowa Spring 2022")
+pst <- plot_richness(ps_subset, x = "Sample_id", measures = c("Shannon", "Simpson"), color = "Sample_type")
+ggsave("richness_plot_Aowa_2022.png", plot = p, width = 10, height = 8, dpi = 300)
+ps_AOWAallyears<- subset_samples(ps, Ship == "Aowa")
+ps_ACCallyears <- subset_samples(ps, Ship == "Accomac")
+ps2022 <- subset_samples(ps, Year == 2022)
+ps2023 <- subset_samples(ps, Year == 2023)
+ps2024 <- subset_samples(ps, Year == 2024)
+ps0m <- subset_samples(ps, Meters == 0)
+```
+```{r Original Bray Curtis}
+# Transform data to proportions as appropriate for Bray-Curtis distances
+ps.prop <- transform_sample_counts(ps, function(otu) otu/sum(otu)) #shows relative abundance instead of raw counts
+ps.propfull <- transform_sample_counts(ps, function(otu) otu/sum(otu)) #shows relative abundance instead of raw counts
+ps.AOWAprop <- transform_sample_counts(ps_AOWAallyears, function(otu) otu/sum(otu))
+ps.ACCprop <- transform_sample_counts(ps_ACCallyears, function(otu) otu/sum(otu))
+ps.2022prop <- transform_sample_counts(ps2022, function(otu) otu/sum(otu))
+ps.2023prop <- transform_sample_counts(ps2023, function(otu) otu/sum(otu))
+ps.2024prop <- transform_sample_counts(ps2024, function(otu) otu/sum(otu))
+
+ord.nmds.bray <- ordinate(ps.prop, method="NMDS", distance="bray") #completes ordination using bray-curtis on relative abundance data
+ord.nmds.brayAOWA <- ordinate(ps.AOWAprop, method="NMDS", distance="bray")
+ord.nmds.brayACC <- ordinate(ps.ACCprop, method="NMDS", distance="bray")
+ord.nmds.bray22 <-ordinate(ps.2022prop, method="NMDS", distance="bray")
+ord.nmds.bray23 <-ordinate(ps.2023prop, method="NMDS", distance="bray")
+ord.nmds.bray24 <-ordinate(ps.2024prop, method="NMDS", distance="bray")
+
+plot_ordination(ps.prop, ord.nmds.bray, color = "Location", title = "Bray NMDS") #creates plot of NMDS from Bray Curtis where the color is based on the sample type
+plot_ordination(ps.AOWAprop, ord.nmds.brayAOWA, color = "Sample_id", title = "Bray NMDS Aowa 2022-2024")
+bACC <-plot_ordination(ps.ACCprop, ord.nmds.brayACC, color = "Sample_id", title = "Bray NMDS Accomac 2022-24")
+b22 <- plot_ordination(ps.2022prop, ord.nmds.bray22, color = "Sample_id", title = "Bray NMDS Accomac and Aowa 2022")
+b23 <- plot_ordination(ps.2023prop, ord.nmds.bray23, color = "Sample_id", title = "Bray NMDS Accomac and Aowa 2023")
+b24 <- plot_ordination(ps.2024prop, ord.nmds.bray24, color = "Sample_id", title = "Bray NMDS Accomac and Aowa 2024")
+
+bSI<-plot_ordination(ps.prop, ord.nmds.bray, color = "Sample_id", title = "Bray NMDS") #creates plot of NMDS from Bray Curtis where color is based on the sample location
+bSI_labeled <- bSI + geom_text(aes(label = Sample_id), size = 3)
+bAoL <- bAOWA + geom_text(aes(label = Sample_id), size =3)
+bAcL <- bACC + geom_text(aes(label = Sample_id), size = 3, check_overlap = TRUE)
+ord.nmds.bray <- ordinate(ps.propfull, method="NMDS", distance="bray") #completes ordination using bray-curtis on relative abundance data
+b<-plot_ordination(ps.propfull, ord.nmds.bray, color = "sample_type", title = "Bray NMDS") #creates plot of NMDS from Bray Curtis where the color is based on the sample type
+bSIALL<-plot_ordination(ps.propfull, ord.nmds.bray, color = "Sample_id", title = "Bray NMDS") #creates plot of NMDS from Bray Curtis where color is based on the sample location
+bSI_labeled <- bSI + geom_text(aes(label = Sample_id), size = 3)
+```
+```{ r Abundance Measures}
+top20_genera <- asv_long %>%
+  group_by(Genus) %>% #groups asv_long by genus
+  summarise(total_abundance = sum(abundance, na.rm = TRUE)) %>% #sums total abundance across samples
+  arrange(desc(total_abundance)) %>% #sorts genera from most to least abundance
+  slice_head(n= 20) %>% #keeps top 20 genera
+  pull(Genus) #stores top 20
+asv_top20 <- asv_long %>%
+  mutate(Genus_grouped = ifelse(Genus %in% top20_genera, Genus, "Other")) #adds new column in asv_long for grouped genus and replaces genus with other if not in top 20
+top20_0m <- names(sort(taxa_sums(ps0m), decreasing = TRUE)) [1:20]
+ps0mTop20 <- prune_taxa(top20_0m, ps0m)
+#Plot abundance
+plot_bar(ps0mTop20, x = "Sample_id", fill = "Order")
+  
+ps.genusAOIS <- tax_glom(ps.propAOIS, taxrank = "Genus")
+top20_generaAOIS <- names(sort(taxa_sums(ps.genusAOIS), decreasing = TRUE))[1:20]
+df_AOIS <- psmelt(ps.genusAOIS) 
+df$Genus_grouped <- ifelse(df$Genus %in% top20_genera, as.character(df$Genus), "Other")
+
+ggplot(df_AOIS, aes(x = Sample_id, y = abundance, fill=Genus_grouped))+
+  geom_bar(stat="identity") +
+  theme_classic() +
+  labs(title = "Aowa Intership Microbial Composition",
+       y = "Relative Abundance",
+       x = "Sample",
+       fill = "Genus") +
+  scale_fill_manual(values = hue_pal()(length(unique(plot_data$Genus_grouped)))) +
+  theme(axis.text.x = element_text(angle = 45, hjust =1))
+plot_data <- asv_top20 %>%
+  group_by(Sample_id, Genus_grouped) %>% #groups data by sample and genus grouped column
+  summarise(abundance = sum(abundance, na.rm =  TRUE), .groups = "drop") #calculates total abundance of genus per sample
+ggplot(plot_data, aes(x = Sample_id, y = abundance, fill=Genus_grouped))+
+  geom_bar(stat="identity") +
+  theme_classic() +
+  labs(title = "Accomac and Aowa Microbial Composition",
+       y = "Relative Abundance",
+       x = "Sample",
+       fill = "Genus") +
+  scale_fill_manual(values = hue_pal()(length(unique(plot_data$Genus_grouped)))) +
+  theme(axis.text.x = element_text(angle = 45, hjust =1))
+```
+```{r Inter-Ship and Transect Samples Broken Up}
+AOISamples <- c( "Aowa1.S311","Aowa10.S316","Aowa11.S320","Aowa2.S315","Aowa3.S319","Aowa4.S323", "Aowa5.S327","Aowa6.S331","Aowa7.S335","Aowa8.S339","Aowa9.S312", "SS016", "SS064", "SS0144", "SS015", "SS063", "SS0143" )
+ps_AOIS <- subset_samples(ps, Sample_id %in% AOISamples)
+ps_transect <- subset_samples(ps, !(Sample_id %in% AOISamples))
+ps_ACC <- subset_samples(ps_transect, (Ship == "Accomac"))
+ps_Aowa <- subset_samples(ps_transect, (Ship == "Aowa"))
+psA <-subset_samples(ps, (Ship == "Aowa"))
+
+ps.propAOIS <- transform_sample_counts(ps_AOIS, function(otu) otu/sum(otu)) #shows relative abundance instead of raw counts
+ps.propTransect <- transform_sample_counts(ps_transect, function(otu) otu/sum(otu)) #shows relative abundance instead of raw counts
+ps.propACC <- transform_sample_counts(ps_ACC, function(otu) otu/sum(otu))
+ps.propAowa <- transform_sample_counts(ps_Aowa, function(otu) otu/sum(otu))
+ps.propA <- transform_sample_counts(psA, function(otu) otu/sum(otu))
+
+sample_data(ps.propAOIS)$Year <- as.factor(sample_data(ps.propAOIS)$Year)
+sample_data(ps.propTransect)$Year <- as.factor(sample_data(ps.propTransect)$Year)
+sample_data(ps.propACC)$Year <- as.factor(sample_data(ps.propACC)$Year)
+sample_data(ps.propAowa)$Year <- as.factor(sample_data(ps.propAowa)$Year)
+sample_data(ps.propA)$Year <- as.factor(sample_data(ps.propA)$Year)
+sample_data(ps.prop)$Year <- as.factor(sample_data(ps.prop)$Year)
+
+ord.nmds.brayAOIS <- ordinate(ps.propAOIS, method="NMDS", distance="bray") #completes ordination using bray-curtis on relative abundance data
+ord.nmds.brayTransect <- ordinate(ps.propTransect, method="NMDS", distance="bray") #completes ordination using bray-curtis on relative abundance data
+ord.nmds.brayACC <- ordinate(ps.propACC, method = "NMDS", distance = "bray")
+ord.nmds.brayAowa <-ordinate(ps.propAowa, method = "NMDS", distance = "bray")
+ord.nmds.brayA <- ordinate(ps.propA, method = "NMDS", distance = "bray")
+
+plot_ordination(ps.propAOIS, ord.nmds.brayAOIS, color = "Location", shape = "Year", title = "Bray NMDS Inter-Ship Samples") +
+  geom_point(size = 2)#creates plot of NMDS from Bray Curtis where the color is based on the sample type
+plot_ordination(ps.propTransect, ord.nmds.brayTransect, color = "Location", shape = "Year", title = "Bray NMDS Transect Samples") +
+  geom_point(size = 3)+
+  scale_color_manual(values = distinctColorPalette(length(unique(sample_data(ps.propTransect)$Location))))
+plot_ordination(ps.propACC, ord.nmds.brayACC, color = "Location", shape = "Year", title = "Bray NMDS Accomac Samples") +
+  geom_point(size = 3)
+plot_ordination(ps.propAowa, ord.nmds.brayAowa, color = "Location", shape = "Year", title = "Bray NMDS Aowa Transect Samples") +
+  geom_point(size = 3)
+plot_ordination(ps.propA, ord.nmds.brayA, color ="Direction", shape = "Year", title = "Bray NMDS Aowa Samples")
+plot_ordination(ps.prop, ord.nmds.bray, color = "Ship", shape = "Year", title = "Bray NMDS All Samples")
+
+top20_AOIS<- names(sort(taxa_sums(ps_AOIS), decreasing = TRUE)) [1:20]
+top20_transect <- names(sort(taxa_sums(ps_transect), decreasing = TRUE)) [1:20]
+psAOISTop20 <- prune_taxa(top20_AOIS, ps_AOIS)
+ps_transecttop20 <- prune_taxa(top20_transect, ps_transect)
+plot_bar(psAOISTop20, x = "Sample_id", fill = "Family")
+plot_bar(ps_transecttop20, x = "Sample_id", fill = "Order")
+
+plot_bar(ps.propAOIS, x = "Sample_id", fill = "Class") + geom_bar(stat = "identity")
+```
+```{ r Relative Abundance}
+ASVLONG_AOIS <- asv_long %>%
+  filter(Sample_id %in% AOISamples)
+ASVLONG_transect <- asv_long %>%
+  filter(!Sample_id %in% AOISamples)
+ASVLONG_transect <- ASVLONG_transect %>% left_join(metaTrans %>% select(Sample_id, Year), by = "Sample_id")
+asvwidetrans$Year <- metaTrans$Year
+ASVLONG2324Transect <- ASVLONG_transect %>%
+  filter(!Year == "2022")
+
+ASVLONG_AOIS <- ASVLONG_AOIS %>%
+  group_by(Sample_id)%>%
+  mutate(rel_abundance = abundance / sum(abundance, na.rm =TRUE)) %>%
+  ungroup()
+asv_long <- asv_long %>%
+  group_by(Sample_id) %>%
+  mutate(rel_abundance = abundance / sum(abundance, na.rm = TRUE)) %>%
+  ungroup()
+ASVLONG_transect <- ASVLONG_transect %>%
+  group_by(Sample_id)%>%
+  mutate(rel_abundance = abundance / sum(abundance, na.rm =TRUE)) %>%
+  ungroup()
+
+top20AOIS_genera <- ASVLONG_AOIS %>%
+  group_by(Genus) %>%
+  summarise(total_rel_abundance = sum(rel_abundance, na.rm = TRUE)) %>% #sums total abundance across samples
+  arrange(desc(total_rel_abundance)) %>% #sorts genera from most to least abundance
+  slice_head(n= 20) %>% #keeps top 20 genera
+  pull(Genus) #stores top 20
+top20_genera <- asv_long %>%
+  group_by(Genus) %>% #groups asv_long by genus
+  summarise(total_rel_abundance = sum(rel_abundance, na.rm = TRUE)) %>% #sums total abundance across samples
+  arrange(desc(total_rel_abundance)) %>% #sorts genera from most to least abundance
+  slice_head(n= 20) %>% #keeps top 20 genera
+  pull(Genus) #stores top 20
+RA_order <- asv_long %>%
+  group_by(Order) %>%
+  summarise(total_rel_abundance = sum(rel_abundance, na.rm = TRUE))
+top20transect_genera <-ASVLONG_transect %>%
+  group_by(Genus) %>% #groups asv_long by genus
+  summarise(total_rel_abundance = sum(rel_abundance, na.rm = TRUE)) %>% #sums total abundance across samples
+  arrange(desc(total_rel_abundance)) %>% #sorts genera from most to least abundance
+  slice_head(n= 20) %>% #keeps top 20 genera
+  pull(Genus) #stores top 20
+top20AOIS_Family <- ASVLONG_AOIS %>%
+  group_by(Family)%>%
+  summarise(total_rel_abundance = sum(rel_abundance, na.rm = TRUE)) %>% #sums total abundance across samples
+  arrange(desc(total_rel_abundance)) %>% #sorts genera from most to least abundance
+  slice_head(n= 20) %>% #keeps top 20 genera
+  pull(Family) #stores top 20
+top20Transect_Family <- ASVLONG_transect %>%
+  group_by(Family)%>%
+  summarise(total_rel_abundance = sum(rel_abundance, na.rm = TRUE)) %>% #sums total abundance across samples
+  arrange(desc(total_rel_abundance)) %>% #sorts genera from most to least abundance
+  slice_head(n= 20) %>% #keeps top 20 genera
+  pull(Family) #stores top 20
+top20AOIS_Order <- ASVLONG_AOIS %>%
+  group_by(Order)%>%
+  summarise(total_rel_abundance = sum(rel_abundance, na.rm = TRUE)) %>% #sums total abundance across samples
+  arrange(desc(total_rel_abundance)) %>% #sorts genera from most to least abundance
+  slice_head(n= 20) %>% #keeps top 20 genera
+  pull(Order) #stores top 20
+top20Transect_Order <- ASVLONG_transect %>%
+  group_by(Order)%>%
+  summarise(total_rel_abundance = sum(rel_abundance, na.rm = TRUE)) %>% #sums total abundance across samples
+  arrange(desc(total_rel_abundance)) %>% #sorts genera from most to least abundance
+  slice_head(n= 20) %>% #keeps top 20 genera
+  pull(Order) #stores top 20
+top20Order <- asv_long %>%
+  group_by(Order) %>%
+  summarise(total_rel_abundance = sum(rel_abundance, na.rm = TRUE)) %>%
+  arrange(desc(total_rel_abundance)) %>%
+  slice_head(n = 20)%>%
+  pull(Order)
+
+asv_top20AOIS <- ASVLONG_AOIS %>%
+  mutate(Genus_grouped = ifelse(Genus %in% top20AOIS_genera, Genus, "Other")) #adds new column in asv_long for grouped genus and replaces genus with other if not in top 20
+asv_top20 <- asv_long %>%
+  mutate(Genus_grouped = ifelse(Genus %in% top20_genera, Genus, "Other")) #adds new column in asv_long for grouped genus and replaces genus with other if not in top 20
+asv_top20transect <- ASVLONG_transect %>%
+  mutate(Genus_grouped = ifelse(Genus %in% top20transect_genera, Genus, "Other")) #adds new column in asv_long for grouped genus and replaces genus with other if not in top 20
+
+asv_top20AOISFam <- ASVLONG_AOIS %>%
+  mutate(Family_grouped = ifelse(Family %in% top20AOIS_Family, Family, "Other"))
+asv_top20TransectFam <- ASVLONG_transect %>%
+  mutate(Family_grouped = ifelse(Family %in% top20Transect_Family, Family, "Other"))
+
+asv_top20AOISOrder <- ASVLONG_AOIS %>%
+  mutate(Order_grouped = ifelse(Order %in% top20AOIS_Order, Order, "Other"))
+asv_top20TransectOrder <- ASVLONG_transect %>%
+  mutate(Order_grouped = ifelse(Order %in% top20Transect_Order, Order, "Other"))
+asv_top20Order <- asv_long %>% 
+  mutate(Order_grouped = ifelse(Order %in% top20Order, Order, "Other"))
+
+plot_dataAOIS <- asv_top20AOIS %>%
+  group_by(Sample_id, Genus_grouped) %>% #groups data by sample and genus grouped column
+  summarise(rel_abundance = sum(rel_abundance, na.rm =  TRUE), .groups = "drop") #calculates total abundance of genus per sample
+plot_data <- asv_top20 %>%
+  group_by(Sample_id, Genus_grouped) %>% #groups data by sample and genus grouped column
+  summarise(rel_abundance = sum(rel_abundance, na.rm =  TRUE), .groups = "drop") #calculates total abundance of genus per sample
+plot_dataTransect <- asv_top20transect %>%
+  group_by(Sample_id, Genus_grouped) %>% #groups data by sample and genus grouped column
+  summarise(rel_abundance = sum(rel_abundance, na.rm =  TRUE), .groups = "drop") #calculates total abundance of genus per sample
+
+
+plot_dataAOISFam <- asv_top20AOISFam %>%
+  group_by(Sample_id, Family_grouped) %>% #groups data by sample and genus grouped column
+  summarise(rel_abundance = sum(rel_abundance, na.rm =  TRUE), .groups = "drop") #calculates total abundance of genus per sample
+plot_dataTransectFam <- asv_top20TransectFam %>%
+  group_by(Sample_id, Family_grouped) %>% #groups data by sample and genus grouped column
+  summarise(rel_abundance = sum(rel_abundance, na.rm =  TRUE), .groups = "drop") #calculates total abundance of genus per sample
+
+plot_dataAOISOrder <- asv_top20AOISOrder %>%
+  group_by(Sample_id, Order_grouped) %>% #groups data by sample and genus grouped column
+  summarise(rel_abundance = sum(rel_abundance, na.rm =  TRUE), .groups = "drop") #calculates total abundance of genus per sample
+plot_dataTransectOrder <- asv_top20TransectOrder %>%
+  group_by(Sample_id, Order_grouped) %>% #groups data by sample and genus grouped column
+  summarise(rel_abundance = sum(rel_abundance, na.rm =  TRUE), .groups = "drop") #calculates total abundance of genus per sample
+plot_dataOrder <- asv_top20Order %>%
+  group_by(Sample_id, Order_grouped) %>% #groups data by sample and genus grouped column
+  summarise(rel_abundance = sum(rel_abundance, na.rm =  TRUE), .groups = "drop") #calculates total abundance of genus per sample
+
+plot_dataOrder <- plot_dataOrder %>%
+  left_join(meta %>% select(Sample_id, Location), by = "Sample_id")
+plot_dataOrder <- plot_dataOrder %>%
+  left_join(meta %>% select(Sample_id, Site), by = "Sample_id")
+
+ggplot(plot_dataAOIS, aes(x = Sample_id, y = rel_abundance, fill=Genus_grouped))+
+  geom_bar(stat="identity") +
+  theme_classic() +
+  labs(title = "Aowa Inter-Ship Samples Microbial Composition",
+       y = "Relative Abundance",
+       x = "Sample",
+       fill = "Genus") +
+  scale_fill_manual(values = hue_pal()(length(unique(plot_dataAOIS$Genus_grouped)))) +
+  theme(axis.text.x = element_text(angle = 45, hjust =1))
+ggplot(plot_dataTransect, aes(x = Sample_id, y = rel_abundance, fill=Genus_grouped))+
+  geom_bar(stat = "identity", color = "black", size = 0.15) +
+  theme_classic() +
+  labs(title = "Accomac and Aowa Transect Samples Microbial Composition",
+       y = "Relative Abundance",
+       x = "Sample",
+       fill = "Genus") +
+  scale_fill_manual(values = hue_pal()(length(unique(plot_dataTransect$Genus_grouped)))) +
+  theme(axis.text.x = element_text(angle = 45, hjust =1))
+ggplot(plot_data, aes(x = Sample_id, y = rel_abundance, fill=Genus_grouped))+
+  geom_bar(stat="identity") +
+  theme_classic() +
+  labs(title = "Accomac and Aowa Microbial Composition",
+       y = "Relative Abundance",
+       x = "Sample",
+       fill = "Genus") +
+  scale_fill_manual(values = hue_pal()(length(unique(plot_data$Genus_grouped)))) +
+  theme(axis.text.x = element_text(angle = 45, hjust =1))
+ggplot(plot_dataAOISFam, aes(x = Sample_id, y = rel_abundance, fill=Family_grouped))+
+  geom_bar(stat = "identity", color = "black", size = 0.15) +
+  theme_classic() +
+  labs(title = "Aowa Inter-Ship Samples Microbial Composition",
+       y = "Relative Abundance",
+       x = "Sample",
+       fill = "Family") +
+  scale_fill_manual(values = hue_pal()(length(unique(plot_dataAOIS$Genus_grouped)))) +
+  theme(axis.text.x = element_text(angle = 45, hjust =1))
+ggplot(plot_dataTransectFam, aes(x = Sample_id, y = rel_abundance, fill=Family_grouped))+
+  geom_bar(stat = "identity", color = "black", size = 0.15) +
+  theme_classic() +
+  labs(title = "Accomac and Aowa Transect Samples Microbial Composition",
+       y = "Relative Abundance",
+       x = "Sample",
+       fill = "Family") +
+  scale_fill_manual(values = hue_pal()(length(unique(plot_dataTransectFam$Family_grouped)))) +
+  theme(axis.text.x = element_text(angle = 45, hjust =1))
+ggplot(plot_dataAOISOrder, aes(x = Sample_id, y = rel_abundance, fill=Order_grouped))+
+  geom_bar(stat = "identity", color = "black", size = 0.15) +
+  theme_classic() +
+  labs(title = "Aowa Inter-Ship Samples Microbial Composition",
+       y = "Relative Abundance",
+       x = "Sample",
+       fill = "Order") +
+  scale_fill_manual(values = hue_pal()(length(unique(plot_dataAOISOrder$Order_grouped)))) +
+  theme(axis.text.x = element_text(angle = 45, hjust =1))
+ggplot(plot_dataTransectOrder, aes(x = Sample_id, y = rel_abundance, fill=Order_grouped))+
+  geom_bar(stat = "identity", color = "black", size = 0.15) +
+  theme_classic() +
+  labs(title = "Accomac and Aowa Transect Sample Microbial Composition by Order",
+       y = "Relative Abundance",
+       x = "Sample",
+       fill = "Order") +
+  scale_fill_manual(values = hue_pal()(length(unique(plot_dataTransectOrder$Order_grouped)))) +
+  theme(axis.text.x = element_text(angle = 45, hjust =1))
+```
+##SIMPER
+```{r Load in Packages}
+library(vegan)
+library(ggplot2)
+library(tidyr)
+library(tidyverse)
+library(dplyr)
+```
+``` { r SIMPER for Order Level}
+order_long <- asv_long %>% group_by(Sample_id, Order) %>% summarise(abundance = sum(abundance), .groups = "drop")
+order_longTransect <- ASVLONG_transect %>% group_by(Sample_id, Order) %>% summarise(abundance = sum(abundance), .groups = "drop")
+order_long2324Transect <- ASVLONG2324Transect %>% group_by(Sample_id, Order) %>% summarise(abundance = sum(abundance), .groups = "drop")
+com_order <- order_long %>% pivot_wider( names_from = Order, values_from = abundance, values_fill = 0 )
+com_order_transect <- order_longTransect %>% pivot_wider( names_from = Order, values_from = abundance, values_fill = 0)
+comorder2324trans <- order_long2324Transect %>% pivot_wider( names_from = Order, values_from = abundance, values_fill = 0)
+sample_ids <- com_order$Sample_id
+com_order <- com_order[ , -1]
+sample_idstrans <- com_order_transect$Sample_id
+com_order_transect <- com_order_transect [, -1]
+sample_id2324trans <- comorder2324trans$Sample_id
+comorder2324trans <- comorder2324trans [, -1]
+write.csv(com_order, "C:/Users/wattsm24/OneDrive - East Carolina University/Documents/Thesis/RDS files for tax/R FIles/Order_count_all.csv")
+write.csv(com_order_transect, "C:/Users/wattsm24/OneDrive - East Carolina University/Documents/Thesis/RDS files for tax/R FIles/Order_count_transect.csv")
+write.csv(comorder2324trans, "C:/Users/wattsm24/OneDrive - East Carolina University/Documents/Thesis/RDS files for tax/R FIles//comorder2324Transec")
+comorder2324trans <- read.csv("C:/Users/wattsm24/OneDrive - East Carolina University/Documents/Thesis/RDS files for tax/R FIles/comorder2324Transec")
+order_all <- read.csv("c:/Users/wattsm24/OneDrive - East Carolina University/Documents/Thesis/RDS files for tax/R FIles/Order_count_all.csv")
+order_all2 <- as.data.frame(order_all)
+order_transect2 <- as.data.frame(com_order_transect)
+order2324Transect2 <- as.data.frame(comorder2324trans)
+com_order.mdf <- as.matrix(com_order)
+com_ordertrans.mdf <- as.matrix(com_order_transect)
+comordertrans2324.mdf <- as.matrix(comorder2324trans)
+order_count.bray.all <- vegdist(com_order.mdf, method = "bray")
+order_count.bray.all
+order_counttrans.bray.all <- vegdist(com_ordertrans.mdf, method = "bray")
+order_counttrans.bray.all
+orderall <- cbind(meta, order_all2)
+ordertrans <- cbind(metaTrans, order_transect2)
+simper_orderall <- with(orderall, simper(order_all2, orderall$Site))
+sumSOA <- summary(simper_orderall)
+sumSOA
+for (comparison in names(sumSOA)) {
+  simper_dfallsc <- as.data.frame(sumSOA[[comparison]])
+  write.csv(simper_dfallsc, file = paste0("allscsimper_", comparison, ".csv"), row.names = TRUE)
+}
+simper_ordertrans <- with(ordertrans, simper(order_transect2, ordertrans$Location))
+sumSOT <- summary(simper_ordertrans)
+for (comparison in names(sumSOT)) {
+  simper_dfTranssc <- as.data.frame(sumSOT[[comparison]])
+  write.csv(simper_dfTranssc, file = paste0("Transscsimper_", comparison, ".csv"), row.names = TRUE)
+}
+
+top20_sig <- simper_dfallsc[order(simper_dfallsc$p), ][1:50, ]
+top20_sig
+view(sumSOA)
+
+three_star <- subset(simper_dfallsc, p <= 0.001)
+three_star
+two_star <- subset(simper_dfallsc, p <= 0.01)
+two_star
+```
+## ANOSIM
+``` {r ANOSIM and Bray Curtis try two}
+meta <- read.csv("C:/Users/wattsm24/OneDrive - East Carolina University/Documents/Thesis/RDS files for tax/R FIles/MetadataALL.csv")
+metaTrans <- filter(meta, Site == "Transect")
+metaAcc <- filter(metaTrans, Ship =="Accomac")
+metaAowaT <- filter(metaTrans, Ship == "Aowa")
+
+##Transpose data
+asv_otu_all2 <- asv_otu_all %>%
+  filter(ASV %in% asv_meta2$ASV)
+asv_transposed <- t(asv_otu_all)
+asv_transposed2 <- t(asv_otu_all2)
+asv_transposed <- as.data.frame(asv_transposed)
+asv_transposed2 <- as.data.frame(asv_transposed2)
+asv_table_fixed <- asv_transposed
+asv_table_fixed2 <- asv_transposed2
+colnames(asv_table_fixed) <- asv_table_fixed[1, ]   # use first row as headers
+colnames(asv_table_fixed2) <- asv_table_fixed2[1, ]
+asv_table_fixed <- asv_table_fixed[-1, ]            # remove the first row
+asv_table_fixed <- as.data.frame(asv_table_fixed)
+df_otu <- asv_table_fixed %>% rownames_to_column(var = "Sample_id")
+nmds_asv_otu <- inner_join(meta, df_otu, by="Sample_id")
+write.table(nmds_asv_otu, "/Users/wattsm24/OneDrive - East Carolina University/Documents/Thesis/RDS files for tax/R FIles/nmds_asv_otu.csv", sep=",", quote=F, col.names=NA)
+asv_table_fixed2 <- asv_table_fixed2[-1, ]            # remove the first row
+asv_table_fixed2 <- as.data.frame(asv_table_fixed2)
+df_otu2 <- asv_table_fixed2 %>% rownames_to_column(var = "Sample_id")
+nmds_asv_otu2 <- inner_join(meta, df_otu2, by="Sample_id")
+write.table(nmds_asv_otu2, "/Users/wattsm24/OneDrive - East Carolina University/Documents/Thesis/RDS files for tax/R FIles/nmds_asv_otu2.csv", sep=",", quote=F, col.names=NA)
+
+
+#community matrix
+pc <- read.csv("/Users/wattsm24/OneDrive - East Carolina University/Documents/Thesis/RDS files for tax/R FIles/nmds_asv_otu.csv")
+pc2 <- nmds_asv_otu2
+com <- pc[,14:ncol(pc)]
+com2 <- pc2[, 13:ncol(pc2)]
+view(com2)
+com2_num <- com2 %>%
+  dplyr::mutate(across(everything(), ~ as.numeric(.)))
+
+#turn ASV information into a matrix
+m_com <- as.matrix(com)
+m_com2 <- as.matrix(com2_num)
+view(m_com)
+m_com2
+#Run NMDS using Bray-Curtis distance
+set.seed(123)
+nmds2 <- metaMDS(m_com2, distance="bray") #stress = 0.1244532 
+nmdsTransect <- metaMDS(m_com_ano_transect, distance = "bray")
+nmdsAOIS <- metaMDS(m_comAOIS, distance = "bray")
+nmdsAcc <- metaMDS(m_com_Acc, distance = "bray")
+nmdsAowaT <- metaMDS(m_com_AowaT, distance = "bray")
+plot(nmds2)
+plot(nmdsTransect)
+plot(nmdsAOIS)
+plot(nmdsAcc)
+plot(nmdsAowaT)
+#access the specific points data of the NMDS plot & scores
+str(nmds2)
+nmds2$points
+scores(nmds2)
+str(nmdsTransect)
+nmdsTransect$points
+scores(nmdsTransect)
+str(nmdsAOIS)
+nmdsAOIS$points
+scores(nmdsAOIS)
+str(nmdsAcc)
+nmdsAcc$points
+scores(nmdsAcc)
+str(nmdsAowaT)
+nmdsAowaT$points
+scores(nmdsAowaT)
+#extract NMDS scores
+data.scores = as.data.frame(scores(nmds)$sites)
+data.scoresT = as.data.frame(scores(nmdsTransect)$sites)
+dsAOIS = as.data.frame(scores(nmdsAOIS)$sites)
+dsAcc = as.data.frame(scores(nmdsAcc)$sites)
+dsAowaT = as.data.frame(scores(nmdsAowaT)$sites)
+ds2 = as.data.frame(scores(nmds2)$sites)
+#add columns to data frame
+data.scores$Sample_id = pc$Sample_id
+data.scores$Location = pc$Location
+data.scores$Meters = pc$Meters
+data.scores$Year = pc$Year
+data.scores$Ship = pc$Ship
+data.scores$Site = pc$Site
+data.scores$Direction = pc$Direction
+data.scoresT$Sample_id = pc_ano_transect$Sample_id
+data.scoresT$Location = pc_ano_transect$Location
+data.scoresT$Meters = pc_ano_transect$Meters
+data.scoresT$Year = pc_ano_transect$Year
+data.scoresT$Ship = pc_ano_transect$Ship
+data.scoresT$Site = pc_ano_transect$Site
+data.scoresT$Direction = pc_ano_transect$Direction
+dsAOIS$Sample_id = pcAOIS$Sample_id
+dsAOIS$Location = pcAOIS$Location
+dsAOIS$Meters = pcAOIS$Meters
+dsAOIS$Year = pcAOIS$Year
+dsAOIS$Ship = pcAOIS$Ship
+dsAOIS$Site = pcAOIS$Site
+dsAcc$Sample_id = pc_Acc$Sample_id
+dsAcc$Location = pc_Acc$Location
+dsAcc$Meters = pc_Acc$Meters
+dsAcc$Year = pc_Acc$Year
+dsAcc$Ship = pc_Acc$Ship
+dsAcc$Site = pc_Acc$Site
+dsAcc$Direction = pc_Acc$Direction
+dsAowaT$Sample_id = pc_AowaT$Sample_id
+dsAowaT$Location = pc_AowaT$Location
+dsAowaT$Meters = pc_AowaT$Meters
+dsAowaT$Year = pc_AowaT$Year
+dsAowaT$Ship = pc_AowaT$Ship
+dsAowaT$Site = pc_AowaT$Site
+dsAowaT$Direction = pc_AowaT$Direction
+ds2$Sample_id = pc2$Sample_id
+ds2$Location = pc2$Location
+ds2$Meters = pc2$Meters
+ds2$Year = pc2$Year
+ds2$Ship = pc2$Ship
+ds2$Site = pc2$Site
+ds2$Direction = pc2$Direction
+head(data.scores)
+head(data.scoresT)
+head(dsAOIS)
+head(dsAcc)
+head(dsAowaT)
+head(ds2)
+
+data.scoresT$Meters <- as.factor(data.scoresT$Meters)
+data.scoresT$Year <- as.factor(data.scoresT$Year)
+dsAOIS$Year <- as.factor(dsAOIS$Year)
+data.scores$Year <- as.factor(data.scores$Year)
+dsAcc$Meters <- as.factor(dsAcc$Meters)
+dsAowaT$Meters <- as.factor(dsAowaT$Meters)
+dsAcc$Year <- as.factor(dsAcc$Year)
+dsAowaT$Year <- as.factor(dsAowaT$Year)
+#graphing NMDS
+# Samples by Wreck
+ggplot(dsAowaT, aes(x = NMDS1, y = NMDS2)) +
+  geom_point(size = 3, aes(colour = Direction, shape = Year))+
+  scale_fill_discrete()+
+  ggtitle("NMDS Ordination - Samples by Location")+
+  theme(axis.text.y = element_text(colour = "black", size = 10, face = "bold"),
+        axis.text.x = element_text(colour = "black", face = "bold", size = 12),
+        legend.text = element_text(size = 12, face ="bold", colour ="black"),
+        legend.position = "right", axis.title.y = element_text(face = "bold", size = 14),
+        axis.title.x = element_text(face = "bold", size = 14, colour = "black"),
+        legend.title = element_text(size = 14, colour = "black", face = "bold"),
+        panel.background = element_blank(), panel.border = element_rect(colour = "black", fill = NA, size = 1.5),
+        legend.key=element_blank()) +
+  labs(x = "NMDS1", colour = "Direction", y = "NMDS2")
+
+pc_ano <- read.csv("/Users/wattsm24/OneDrive - East Carolina University/Documents/Thesis/RDS files for tax/R FIles/nmds_asv_otu.csv")
+view(pc_ano)
+# Selected data to use & double check only the ASV columns are selected
+com_ano = pc_ano[,14:ncol(pc_ano)]
+View(com_ano)
+m_com_ano = as.matrix(com_ano)
+ano_all = anosim(m_com_ano, pc_ano$Site, distance = "bray", permutations = 9999)
+ano_all
+ano_allShip = anosim(m_com_ano, pc_ano$Ship, distance = "bray", permutations = 9999)
+ano_allShip
+ano_allDirection = anosim(m_com_ano_transect, pc_ano_transect$Direction, distance = "bray", permutations = 9999)
+ano_allDirection
+ano_allShip = anosim(m_com_ano_transect, pc_ano_transect$Ship, distance = "bray", permutations = 9999)
+ano_allShip
+
+ano_allLocation = anosim(m_com_ano_transect, pc_ano_transect$Location, distance = "bray", permutations = 9999)
+ano_allLocation
+anoISloc = anosim(m_comAOIS, pcAOIS$Location, distance = "bray", permutations = 9999)
+anoISloc
+anoYear = anosim(m_com_ano, pc_ano$Year, distance = "bray", permutations = 9999)
+anoYear
+Acc = anosim(m_com_Acc, pc_Acc$Direction,distance = "bray", permutations = 9999)
+Acc
+at = anosim(m_com_AowaT, pc_AowaT$Direction, distance = "bray", permutations =9999)
+at
+#create transect only pc and m_com_ano, 
+pc_ano_transect <- filter(pc, Site == "Transect")
+pc_Acc <- filter(pc_ano_transect, Ship =="Accomac")
+pc_AowaT <- filter(pc_ano_transect, Ship == "Aowa")
+com_ano_transect = pc_ano_transect[,14:ncol(pc_ano_transect)]
+com_Acc = pc_Acc[,14:ncol(pc_Acc)]
+com_AowaT = pc_AowaT[,14:ncol(pc_AowaT)]
+m_com_ano_transect <- as.matrix(com_ano_transect)
+m_com_Acc <- as.matrix(com_Acc)
+m_com_AowaT <- as.matrix(com_AowaT)
+#create AOIS only pc, com, and m_com
+pcAOIS <- filter(pc, Site == "Inter-Ship")
+comAOIS = pcAOIS[,14:ncol(pcAOIS)]
+m_comAOIS <- as.matrix(comAOIS)
+```
+##CCA PLOTS
+```{ r Load Packages}
+library(vegan)
+library(phyloseq)
+library(CCA)
+library(tidyverse)
+```
+
+```{ r Load and Combine Data}
+comm <- com_order.mdf
+comm2324 <- comordertrans2324.mdf
+metatrans2324 <- metaTrans %>%
+  filter(!Year == "2022")
+env <- meta %>%
+  dplyr::select(Site, Year, Ship, Direction, Meters, Cr, Cu, Fe, Pb, Sample_id)
+YSIData <- read.csv("C:/Users/wattsm24/OneDrive - East Carolina University/Documents/Thesis/RDS files for tax/R FIles/YSIDATA.csv")
+rownames(YSIData) <- YSIData$Sample_id
+rownames(metatrans2324) <- metatrans2324$Sample_id
+YSIData <- YSIData[match(metatrans2324$Sample_id,
+                         rownames(YSIData)), ]
+all(rownames(YSIData) == metatrans2324$Sample_id) #checks metadata alignment, 
+
+metatrans2324YSI <- cbind(metatrans2324, YSIData)
+metatrans2324YSI <- metatrans2324YSI[, -16]
+
+env2324 <- metatrans2324YSI %>%
+  dplyr::select(Sample_id, Site, Year,Ship, Direction, Meters, Cr, Cu, Fe, Pb, Salinity..PSU., Season, pH, Year, Temperature..ºC..)
+
+env$Site <- factor(env$Site)
+env$Ship <- factor(env$Ship)
+env$Direction <- factor(env$Direction)
+env$Year <- factor(env$Year)
+env2324$Site <- factor(env2324$Site)
+env2324$Ship <- factor(env2324$Ship)
+env2324$Direction <- factor(env2324$Direction)
+```
+
+```{r Build CCAs}
+CCA1 <- cca(com_order.mdf ~ Site + Ship + Direction + Meters + Cr + Cu + Fe + Pb, data = env)
+CCA2 <- cca(com_order.mdf ~ Site + Ship + Meters + Cr + Cu + Fe+ Pb, data = env)
+CCA3 <- cca(com_order.mdf ~ Cr + Cu + Fe + Pb, data = env)
+CCA4 <- cca(com_order.mdf ~ Site + Ship + Meters, data = env)
+CCA5 <- cca(comm2324 ~ Salinity..PSU. + Season + pH + Temperature..ºC.., data = env2324)
+CCA6 <- cca(comm2324 ~ Salinity..PSU. + Season + pH + Temperature..ºC.. + Cr + Cu + Fe + Pb, data = env2324)
+CCA7 <- cca(comm2324 ~Salinity..PSU. + Season + pH + Temperature..ºC.. + Ship + Meters, data = env2324)
+CCA8 <- cca(com_order.mdf ~ Pb + Fe + Meters + Site + Ship, data = env)
+CCA9 <- cca(comm2324 ~ Pb + Fe + pH + Ship, data =env2324)
+
+summary(CCA1)
+summary(CCA2)
+summary(CCA3)
+summary(CCA4)
+summary(CCA5)
+summary(CCA6)
+summary(CCA7)
+summary(CCA8)
+summary(CCA9)
+```
+```{r Plot CCAs}
+plot(CCA1)
+plot(CCA1, display = c("sites", "bp"), scaling = 2)
+plot(CCA2)
+plot(CCA3)
+plot(CCA4)
+plot(CCA5)
+plot(CCA6)
+plot(CCA7)
+plot(CCA8)
+plot(CCA9)
+```
+``` {r Score Sites and Arrows}
+sites <- scores(CCA1, display = "sites", scaling = 2)
+sites_df <- as.data.frame(sites)
+sites_df$Sample_id <- rownames(sites_df)
+sites_df <- cbind(sites_df, env)   # add metadata for coloring
+sites_df
+sitesCCA2 <- scores(CCA2, display = "sites", scaling = 2)
+sitesCCA2_df <- as.data.frame(sitesCCA2)
+sitesCCA2_df$Sample_id <- rownames(sitesCCA2_df)
+sitesCCA2_df <- cbind(sitesCCA2_df, env)   # add metadata for coloring
+sitesCCA2_df
+SCA3 <- scores(CCA3, display = "sites", scaling = 2)
+SCA3df <- as.data.frame(SCA3)
+SCA3df$Sample_id <- rownames(SCA3df)
+SCA3df <- cbind(SCA3df, env)
+SCA3df
+SCA4 <- scores(CCA4, display = "sites", scaling = 2)
+SCA4df <- as.data.frame(SCA4)
+SCA4df$Sample_id <- rownames(SCA4df)
+SCA4df <- cbind(SCA4df, env)
+SCA4df
+SCA5 <- scores(CCA5, display = "sites", scaling = 2)
+SCA5df <- as.data.frame(SCA5)
+SCA5df$Sample_id <- rownames(SCA5df)
+SCA5df <- cbind(SCA5df, env2324)
+SCA5df
+SCA6 <- scores(CCA6, display = "sites", scaling = 2)
+SCA6df <- as.data.frame(SCA6)
+SCA6df$Sample_id <- rownames(SCA6df)
+SCA6df <- cbind(SCA6df, env2324)
+SCA6df
+SCA7 <- scores(CCA7, display = "sites", scaling = 2)
+SCA7df <- as.data.frame(SCA7)
+SCA7df$Sample_id <- rownames(SCA7df)
+SCA7df <- cbind(SCA7df, env2324)
+SCA7df
+SCA8 <- scores(CCA8, display = "sites", scaling = 2)
+SCA8df <- as.data.frame(SCA8)
+SCA8df$Sample_id <- rownames(SCA8df)
+SCA8df <- cbind(SCA8df, env)
+SCA8df
+SCA9 <- scores(CCA9, display = "sites", scaling = 2)
+SCA9df <- as.data.frame(SCA9)
+SCA9df$Sample_id <- rownames(SCA9df)
+SCA9df <- cbind(SCA9df, env2324)
+SCA9df
+
+arrows <- scores(CCA1, display = "bp", scaling = 2)
+arrows_df <- as.data.frame(arrows)
+arrows_df$Variable <- rownames(arrows_df)
+arrows_df
+arrowsCCA2 <- scores(CCA2, display = "bp", scaling = 2)
+arrowsCCA2_df <- as.data.frame(arrowsCCA2)
+arrowsCCA2_df$Variable <- rownames(arrowsCCA2_df)
+arrowsCCA2_df
+A3 <- scores(CCA3, display = "bp", scaling = 2)
+A3df <- as.data.frame(A3)
+A3df$Variable <- rownames(A3df)
+A3df
+A4 <- scores(CCA4, display = "bp", scaling = 2)
+A4df <- as.data.frame(A4)
+A4df$Variable <- rownames(A4df)
+A4df
+A5 <- scores(CCA5, display = "bp", scaling = 2)
+A5df <- as.data.frame(A5)
+A5df$Variable <- rownames(A5df)
+A5df
+A6 <- scores(CCA6, display = "bp", scaling = 2)
+A6df <- as.data.frame(A6)
+A6df$Variable <- rownames(A6df)
+A6df
+A7 <- scores(CCA7, display = "bp", scaling = 2)
+A7df <- as.data.frame(A7)
+A7df$Variable <- rownames(A7df)
+A7df
+A8 <- scores(CCA8, display = "bp", scaling = 2)
+A8df <- as.data.frame(A8)
+A8df$Variable <- rownames(A8df)
+A8df
+A9 <- scores(CCA9, display = "bp", scaling = 2)
+A9df <- as.data.frame(A9)
+A9df$Variable <- rownames(A9df)
+A9df
+```
+```{r plot CCAs}
+library(ggplot2)
+SCA9df$Meters <- as.factor(SCA9df$Meters)
+SCA4df$Year <- as.factor(SCA4df$Year)
+SCA5df$Temperature..ºC.. <- as.factor(SCA5df$Temperature..ºC..)
+ggplot() +
+  geom_point(data = SCA3df,
+             aes(x = CCA1, y = CCA2, color = Sample_id),
+             size = 2.5, alpha = 0.5) +
+  
+  geom_segment(data = A3df,
+               aes(x = 0, y = 0, xend = CCA1, yend = CCA2),
+               arrow = arrow(length = unit(0.2, "cm")),
+               linewidth = 1, alpha = 1) +
+  geom_text_repel( data = A3df, aes(x = CCA1, y = CCA2, label = Variable), size = 3, vjust = 0.75 ) +
+  theme(panel.background = element_blank(), panel.border = element_rect(colour = "black", fill = NA, size = 1.5))+
+  geom_text_repel(data = SCA3df,
+                  aes(x = CCA1, y = CCA2, label = Sample_id), size = 2, color= "forestgreen", max.overlaps = Inf) +
+    labs(title = "CCA with Environmental, Ship, and Metal Variables as Arrows",
+       x = "CCA1",
+       y = "CCA2")
+```
+```{r PERMANOVA for CCAs}
+all(rownames(comm) == env$Sample_id)
+
+P1 <-adonis2(comm ~ Site + Year + Ship + Direction + Meters + Cr + Cu + Fe + Pb,
+             data = env,
+             method = "bray",
+             permutations = 999,
+             by = "terms")
+print(P1)
+P2 <-adonis2(comm ~ Site + Year + Ship + Meters + Cr + Cu + Fe + Pb,
+             data = env,
+             method = "bray",
+             permutations = 999)
+print(P2)
+P3 <-adonis2(comm ~ Cr + Cu + Fe + Pb,
+             data = env,
+             method = "bray",
+             permutations = 999,
+             by = "terms")
+print(P3)
+P4 <-adonis2(comm ~ Site + Year + Ship + Meters,
+             data = env,
+             method = "bray",
+             permutations = 999,
+             by = "terms")
+print(P4)
+P4a <-adonis2(comm ~ Site + Ship + Meters,
+             data = env,
+             method = "bray",
+             permutations = 999,
+             by = "terms")
+print(P4a)
+P1a <-adonis2(comm ~ Site + Ship + Direction + Meters + Cr + Cu + Fe + Pb,
+             data = env,
+             method = "bray",
+             permutations = 999)
+print(P1a)
+P5 <-adonis2(comm2324 ~ Salinity..PSU. + pH + Season + Temperature..ºC..,
+             data = env2324,
+             method = "bray",
+             permutations = 999,
+             by = "terms")
+print(P5)
+P6 <-adonis2(comm2324 ~ Cr + Cu + Fe + Pb + Salinity..PSU. + pH + Season + Temperature..ºC..,
+             data = env2324,
+             method = "bray",
+             permutations = 999)
+print(P6)
+P7 <-adonis2(comm2324 ~ Ship + Meters + Salinity..PSU. + pH + Season + Temperature..ºC..,
+             data = env2324,
+             method = "bray",
+             permutations = 999)
+print(P7)
+
+
+P8 <-adonis2(comm2324 ~ Ship + Direction + Meters + Cr + Cu + Fe + Pb + Salinity..PSU. + pH + Season + Temperature..ºC..,
+             data = env2324,
+             method = "bray",
+             permutations = 999,
+             by = "terms")
+print(P8)
+P9 <- adonis2(comm ~ Pb + Fe +  Meters + Site + Ship, 
+              data = env,
+              method = "bray",
+              permutations = 999)
+print(P9)
+P10 <- adonis2(comm2324 ~ Pb + Fe + pH + Ship, 
+              data = env2324,
+              method = "bray",
+              permutations = 999,
+              by = "terms")
+print(P10)
+P11 <- adonis2(comm ~ Cr, 
+              data = env,
+              method = "bray",
+              permutations = 999)
+print(P11)
+P12 <- adonis2(comm ~ Cu, 
+               data = env,
+               method = "bray",
+               permutations = 999)
+print(P12)
+P13 <- adonis2(comm ~ Cr +Cu, 
+               data = env,
+               method = "bray",
+               permutations = 999)
+print(P13)
+P14 <- adonis2(comm ~ Ship, 
+               data = env,
+               method = "bray",
+               permutations = 999)
+P14
+P15 <- adonis2(comm ~ Meters, 
+               data = env,
+               method = "bray",
+               permutations = 999)
+P15
+P16 <- adonis2(comm2324 ~ pH, 
+               data = env2324,
+               method = "bray",
+               permutations = 999,
+               by = "terms")
+P16
+```
+## Rarefaction
+```{ r Load Packages}
+library(ggplot2)
+library(vegan)
+```
+
+```{r wrangling}
+asv_otu_all <- read.csv("C:/Users/wattsm24/OneDrive - East Carolina University/Documents/Thesis/RDS files for tax/R FIles/asv_otu.csv")
+rownames(asv_otu_all) <- asv_otu_all$ASV
+asv_otu_all <- asv_otu_all[, -1]
+```
+
+```{r Plot all AG OTU counts}
+# 1. Prepare the data
+d4 <- (as.data.frame(asv_otu_all))
+d4 <- t(d4)
+d4 <- (as.data.frame(d4))
+d4$colsum <- rowSums(d4) 
+d4$group <- rownames(d4)
+
+# 2. Plot with labels
+p5 <- ggplot(d4, aes(x = reorder(group, -colsum), y = colsum)) +
+  geom_bar(stat = "identity", fill = "steelblue") +
+  # Add the count labels
+  geom_text(aes(label = colsum), hjust = -0.2, size = 3.5) + 
+  coord_flip() +
+  theme_minimal() +
+  # Expand the y-axis (which is horizontal now) slightly to make room for the labels
+  scale_y_continuous(expand = expansion(mult = c(0, 0.15))) +
+  labs(x = "Sample ID", y = "Total Count", title = "All Ag sample OTU counts")
+
+p5
+ggsave("C:/Users/watts/OneDrive - East Carolina University/Thesis/OTUs_ALL2.pdf", plot=p5, device="pdf", scale=1, width= 500, height= 600, units = "cm", dpi=600, limitsize=F, bg="white")
+```
+
+```{r Rarefaction Steps}
+# 1. Find the minimum sample size (library depth) for rarefaction
+sample_sums <- colSums(asv_otu_all)
+
+# We find the smallest sample sum to use as our depth
+min_depth <- min(sample_sums)
+
+# Readout
+print(paste("Rarefying all samples to a depth of:", min_depth, "reads"))
+
+# 4. Set a random seed for reproducibility
+set.seed(42) 
+
+# 5. Perform rarefaction
+asv_rarefied <- rrarefy(asv_otu_all, sample = min_depth)
+
+# 6. Check the new row sums to confirm
+print("New row sums after rarefaction:")
+print(rowSums(asv_rarefied))
+
+# 'otu_rarefied' is your new data frame with rarefied counts
+asv_rel <- prop.table(as.matrix(asv_rarefied), margin = 1)
+#write.csv("C:/Users/wattsm24/OneDrive - East Carolina University/Documents/Thesis/RDS files for tax/R FIles/asv_rel.csv")
+
+```
+
+```{r Bray Curtis Again}
+MetadataALL <- read.csv("./MetadataALL.csv")
+NMDSmeta <- read.csv("./nmds_asv_otu.csv")
+m_com <- asv_rel
+#Run NMDS using Bray-Curtis distance
+set.seed(123)
+
+nmds <- metaMDS(m_com, distance="bray", trymax = 15) #stress = 0.1244532 
+nmds
+
+nmds <- metaMDS(t(m_com), distance="bray", trymax = 15) #stress = 0.1244532 
+nmds
+
+# Calculate
+m_com_BC <- vegdist(t(m_com), method = "bray")
+
+nmds_bc <- metaMDS(m_com_BC, distance="bray", trymax = 15) #stress = 0.1244532 
+nmds_bc
+
+plot(nmds_bc)
+#access the specific points data of the NMDS plot & scores
+str(nmds_bc)
+nmds_bc$points
+scores(nmds_bc)
+
+#extract nmds_bc scores
+#data.scores = as.data.frame(scores(nmds_bc)$sites)
+
+# dianostics
+class(nmds_bc)
+str(nmds_bc)
+
+data.scores <- as.data.frame(nmds_bc$points)
+
+#add columns to data frame
+data.scores$Sample_id = rownames(data.scores)
+data.scores$Location = MetadataALL$Location
+data.scores$Direction = MetadataALL$Direction
+data.scores$Sample_year = MetadataALL$Year
+data.scores$Site = MetadataALL$Site
+
+head(data.scores)
+xx = ggplot(data.scores, aes(x = MDS1, y = MDS2)) +
+ geom_point(size = 3, aes(colour = Site))+
+  scale_fill_discrete()+
+  ggtitle("NMDS Ordination - Samples Across Site")+
+ theme(axis.text.y = element_text(colour = "black", size = 10, face = "bold"),
+       axis.text.x = element_text(colour = "black", face = "bold", size = 12),
+       legend.text = element_text(size = 12, face ="bold", colour ="black"),
+       legend.position = "right", axis.title.y = element_text(face = "bold", size = 14),
+       axis.title.x = element_text(face = "bold", size = 14, colour = "black"),
+       legend.title = element_text(size = 14, colour = "black", face = "bold"),
+       panel.background = element_blank(), panel.border = element_rect(colour = "black", fill = NA, size = 1.5),
+       legend.key=element_blank()) +
+ labs(x = "NMDS1", colour = "location", y = "NMDS2")
+xx
+ggsave("/Users/wattsm24/OneDrive - East Carolina University/Documents/Thesis/RDS files for tax/MicrobialPlots/NEWNMDS.png", width = 10, height = 10)
+```
